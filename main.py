@@ -5,29 +5,43 @@ import urllib
 from tkinter import *
 
 def createUI(root):
-    siteLabel = Label(root, text="Site: ")
-    siteEntry = Entry(root)
+    siteGrid = Frame(root, width=450, height=50, padx=5, pady=5)
+    queryGrid = Frame(root, width=450, height=50, padx=5, pady=5)
+    amountGrid = Frame(root, width=450, height=50, padx=5, pady=5)
+    outputGrid = Frame(root, width=450, height=50, padx=10, pady=10)
 
-    queryLabel = Label(root, text="Search: ")
-    queryEntry = Entry(root)
+    root.grid_rowconfigure(1, weight=1)
+    root.grid_columnconfigure(0, weight=1)
 
-    resultsLabel = Label(root, text="Results Amount: ")
-    resultsEntry = Entry(root)
+    siteLabel = Label(siteGrid, text="Site: ")
+    siteEntry = Entry(siteGrid, width=100)
 
-    outputLabel = Label(root, text="Output: ")
-    outputText = Text(root)
+    queryLabel = Label(queryGrid, text="Search: ")
+    queryEntry = Entry(queryGrid, width=100)
+
+    resultsLabel = Label(amountGrid, text="Results Amount: ")
+    resultsEntry = Entry(amountGrid, width=5)
+
+    outputLabel = Label(outputGrid, text="Output: ")
+    outputText = Text(outputGrid)
+    outputText.configure(state="disabled", bg="#e9e9e9")
 
     siteLabel.grid(row=0, column=0, sticky=W)
     siteEntry.grid(row=0, column=1)
 
-    queryLabel.grid(row=1, column=0, sticky=W)
-    queryEntry.grid(row=1, column=1)
+    queryLabel.grid(row=0, column=0, sticky=W)
+    queryEntry.grid(row=0, column=1)
 
-    resultsLabel.grid(row=2, column=0, sticky=W)
-    resultsEntry.grid(row=2, column=1)
+    resultsLabel.grid(row=0, column=0, sticky=W)
+    resultsEntry.grid(row=0, column=1)
 
-    #outputLabel.grid(row=3, column=0, sticky=W)
-    #outputText.grid(row=4, column=0)
+    outputLabel.grid(row=0, column=0, sticky=W)
+    outputText.grid(row=1, column=0)
+
+    siteGrid.grid(row=0, column=0, sticky=NW)
+    queryGrid.grid(row=1, column=0, sticky=NW)
+    amountGrid.grid(row=2, column=0, sticky=NW)
+    outputGrid.grid(row=3, column=0, sticky=NW)
 
 def googleQuery(query, resultsAmt, site=None):
     resultsDict = {}
