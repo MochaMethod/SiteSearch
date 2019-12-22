@@ -3,9 +3,18 @@ from selenium import webdriver
 from bs4 import BeautifulSoup
 import urllib
 from tkinter import *
+import sys
+
+DRIVER = None
 
 def output(root, outputWidget, message):
     outputWidget.insert("end", message)
+    outputWidget.see("end")
+
+def exit():
+    if DRIVER is not None:
+        DRIVER.quit()
+    sys.exit()
 
 def googleQuery(query, resultsAmt, site=None):
     resultsDict = {}
@@ -15,7 +24,11 @@ def googleQuery(query, resultsAmt, site=None):
     if site is not None:
         searchQuery = f"site:{site} {query}" 
 
-    driver = webdriver.Chrome() 
+    chrome_options = webdriver.chrome.options.Options()
+    chrome_options.add_argument("--headless")
+    driver = webdriver.Chrome(chrome_options=chrome_options) 
+    global DRIVER
+    DRIVER = driver
 
     for j in googlesearch.search(searchQuery, tld="com", lang="en", num=resultsAmt, stop=resultsAmt, pause=2):
         parsedQuery = urllib.parse.quote_plus(searchQuery)
@@ -59,6 +72,7 @@ def handleSubmit(root, outputWidget, queryEntry, resultsEntry, siteEntry):
     
 
 def createUI(root):
+    optionsGrid = Frame(root, width=450, height=50, padx=5, pady=5)
     siteGrid = Frame(root, width=450, height=50, padx=5, pady=5)
     queryGrid = Frame(root, width=450, height=50, padx=5, pady=5)
     amountGrid = Frame(root, width=450, height=50, padx=5, pady=5)
@@ -67,6 +81,11 @@ def createUI(root):
 
     root.grid_rowconfigure(1, weight=1)
     root.grid_columnconfigure(0, weight=1)
+
+    menuBar = Menu(optionsGrid)
+    menuBar.add_command(label="Exit", command=exit)
+
+    root.config(menu=menuBar)
     
     queryLabel = Label(queryGrid, text="* Search: ")
     queryEntry = Entry(queryGrid, width=110)
@@ -78,8 +97,8 @@ def createUI(root):
     siteEntry = Entry(siteGrid, width=100)
 
     outputLabel = Label(outputGrid, text="Output: ")
-    outputText = Text(outputGrid)
-    outputText.configure(state="disabled", bg="#e9e9e9")
+    outputText = Text(outputGrid, width=100)
+    outputText.configure(bg="#e9e9e9")
     
     resultsSubmit = Button(submitGrid, text="Search", command=lambda: handleSubmit(root, outputText, queryEntry, resultsEntry, siteEntry))
 
