@@ -4,19 +4,34 @@ from bs4 import BeautifulSoup
 import urllib
 from tkinter import *
 import sys
+from tkHyperlinkManager import *
+import webbrowser
 
 DRIVER = None
 
-def output(root, outputWidget, message):
-    outputWidget.insert("end", message)
-    outputWidget.see("end")
+def selectHyperlink(url):
+    print(url)
+
+def createChromeDriver():
+    chrome_options = webdriver.chrome.options.Options()
+    chrome_options.add_argument("--headless")
+    driver = webdriver.Chrome(chrome_options=chrome_options) 
+    global DRIVER
+    DRIVER = driver
+
+def output(root, outputWidget, message, hyperlink=None):
+    if hyperlink is not None:
+        outputWidget.insert("end", message, hyperlink.add(selectHyperlink))
+
+    else:
+        outputWidget.insert("end", message)
 
 def exit():
     if DRIVER is not None:
         DRIVER.quit()
     sys.exit()
 
-def googleQuery(query, resultsAmt, site=None):
+def googleQuery(query, resultsAmt=1, site=None):
     resultsDict = {}
 
     searchQuery = query
@@ -24,19 +39,13 @@ def googleQuery(query, resultsAmt, site=None):
     if site is not None:
         searchQuery = f"site:{site} {query}" 
 
-    chrome_options = webdriver.chrome.options.Options()
-    chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(chrome_options=chrome_options) 
-    global DRIVER
-    DRIVER = driver
-
     for j in googlesearch.search(searchQuery, tld="com", lang="en", num=resultsAmt, stop=resultsAmt, pause=2):
         parsedQuery = urllib.parse.quote_plus(searchQuery)
         requestsSearch = f"https://google.com/search?q={parsedQuery}"
         print(requestsSearch)
 
-        driver.get(requestsSearch)
-        content = driver.page_source.encode("utf-8").strip()
+        DRIVER.get(requestsSearch)
+        content = DRIVER.page_source.encode("utf-8").strip()
         soup = BeautifulSoup(content, "html.parser")
 
         titles = soup.findAll("h3", class_="LC20lb")
@@ -55,21 +64,29 @@ def googleQuery(query, resultsAmt, site=None):
             else:
                 break
 
-    driver.quit()
-
     return resultsDict
 
-def handleSubmit(root, outputWidget, queryEntry, resultsEntry, siteEntry):
+def handleSubmit(root, outputWidget, hyperlink, queryEntry, resultsEntry, siteEntry):
     query = queryEntry.get()
-    amount = int(resultsEntry.get())
-    site = siteEntry.get()
+
+    amount = 1
+    site = None
+
+    if resultsEntry.get() != "":
+        amount = int(resultsEntry.get())
+
+    if siteEntry.get() != "":  
+        site = siteEntry.get()
 
     resultsDict = googleQuery(query, amount, site)
+
     for k, v in resultsDict.items():
-        message = (f"\nTitle: {k}\nURL: {v}\n")
-        print(message)
-        output(root, outputWidget, message)
-    
+        messageTitle = f"\nTitle: {k}\n"
+        messageURL = f"{v}\n"
+        output(root, outputWidget, messageTitle)
+        output(root, outputWidget, messageURL, hyperlink)
+
+    print(f"Hyperlinks: {hyperlink.links}")
 
 def createUI(root):
     optionsGrid = Frame(root, width=450, height=50, padx=5, pady=5)
@@ -90,7 +107,7 @@ def createUI(root):
     queryLabel = Label(queryGrid, text="* Search: ")
     queryEntry = Entry(queryGrid, width=110)
 
-    resultsLabel = Label(amountGrid, text="* Desired amount of results: ")
+    resultsLabel = Label(amountGrid, text="Desired amount of results: ")
     resultsEntry = Entry(amountGrid, width=5)
 
     siteLabel = Label(siteGrid, text="Site-specific search: ")
@@ -99,8 +116,9 @@ def createUI(root):
     outputLabel = Label(outputGrid, text="Output: ")
     outputText = Text(outputGrid, width=100)
     outputText.configure(bg="#e9e9e9")
+    hyperlink = HyperlinkManager(outputText)
     
-    resultsSubmit = Button(submitGrid, text="Search", command=lambda: handleSubmit(root, outputText, queryEntry, resultsEntry, siteEntry))
+    resultsSubmit = Button(submitGrid, text="Search", command=lambda: handleSubmit(root, outputText, hyperlink, queryEntry, resultsEntry, siteEntry))
 
     queryLabel.grid(row=0, column=0, sticky=W)
     queryEntry.grid(row=0, column=1)
@@ -124,21 +142,16 @@ def createUI(root):
 
     root.bind(
         "<Return>", 
-        lambda root=root, outputText=outputText, queryEntry=queryEntry, amountEntry=resultsEntry, siteEntry=siteEntry: handleSubmit(
-            root, outputText, queryEntry, resultsEntry, siteEntry
+        lambda root=root, outputText=outputText, hyperlink=hyperlink, queryEntry=queryEntry, amountEntry=resultsEntry, siteEntry=siteEntry: handleSubmit(
+            root, outputText, hyperlink, queryEntry, resultsEntry, siteEntry
             )
         )
 
 def main():
     root = Tk()
     createUI(root)
+    createChromeDriver()
     root.mainloop()
-
-    query = "C++ arrays"
-    resultsDict = googleQuery(query, 1, "stackoverflow.com")
-
-    for k, v in resultsDict.items():
-        print(f"\nTitle: {k}\nURL: {v}\n")
 
     return 0
 
